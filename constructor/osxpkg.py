@@ -27,12 +27,17 @@ CACHE_DIR = PACKAGE_ROOT = PACKAGES_DIR = SCRIPTS_DIR = None
 
 logger = logging.getLogger(__name__)
 
+check_call_x = check_call
+
+def check_call(args):
+    logger.info(args)
+    return check_call_x(args)
 
 def calculate_install_dir(yaml_file, subdir=None):
     contents = parse(yaml_file, subdir or conda_context.subdir)
     if contents.get("installer_type") == "sh":
         return contents["name"]
-    name = contents.get("pkg_name") or contents["name"]
+    name = package_prefix(contents)
     location = contents.get("default_location_pkg")
     if location:
         return f"{location}/{name}"
@@ -45,8 +50,7 @@ def write_readme(dst, info):
     with open(src) as fi:
         data = fi.read()
 
-    # This is necessary for when installing on case-sensitive macOS filesystems.
-    data = data.replace('__NAME_LOWER__', info.get("pkg_name", info['name']).lower())
+    data = data.replace('__PKG_NAME__', info.get("pkg_name", info['name']))
     data = data.replace('__NAME__', info['name'])
     data = data.replace('__VERSION__', info['version'])
 
@@ -286,19 +290,19 @@ def move_script(src, dst, info, ensure_shebang=False, user_script_type=None):
     ppd = ns_platform(info['_platform'])
     ppd['check_path_spaces'] = bool(info.get("check_path_spaces", True))
 
-    # This is necessary for when installing on case-sensitive macOS filesystems.
-    pkg_name_lower = info.get("pkg_name", info['name']).lower()
+    pkg_name = info.get("pkg_name", info['name'])
     default_path_exists_error_text = (
         "'{CHOSEN_PATH}' already exists. Please, relaunch the installer and "
         "choose another location in the Destination Select step."
     )
     path_exists_error_text = info.get(
         "install_path_exists_error_text", default_path_exists_error_text
-    ).format(CHOSEN_PATH=f"$2/{pkg_name_lower}")
+    ).format(CHOSEN_PATH=f"$2/{pkg_name}")
     replace = {
         'NAME': info['name'],
-        'NAME_LOWER': pkg_name_lower,
         'VERSION': info['version'],
+        'PKG_NAME': info['name'],
+        'PKG_PREFIX': package_prefix(info),
         'PLAT': info['_platform'],
         'CHANNELS': ','.join(get_final_channels(info)),
         'WRITE_CONDARC': '\n'.join(add_condarc(info)),
@@ -308,6 +312,7 @@ def move_script(src, dst, info, ensure_shebang=False, user_script_type=None):
         'CONSTRUCTOR_VERSION': info['CONSTRUCTOR_VERSION'],
         'REGISTER_ENVS': str(info.get("register_envs", True)).lower(),
     }
+
     data = preprocess(data, ppd)
     custom_variables = info.get('script_env_variables', {})
     data = fill_template(data, replace)
@@ -345,6 +350,7 @@ def pkgbuild(name, identifier=None, version=None, install_location=None):
         "--identifier", "%s.pkg.%s" % (identifier, name),
         "--ownership", "preserve",
     ]
+    logger.info(args)
 
     if isdir(SCRIPTS_DIR) and os.listdir(SCRIPTS_DIR):
         args += ["--scripts", SCRIPTS_DIR]
@@ -400,6 +406,29 @@ def pkgbuild_script(name, info, src, dst='postinstall', **kwargs):
     rm_rf(SCRIPTS_DIR)
 
 
+def package_name(info):
+    name = None
+    if 'mac_bundle' in info:
+        name = info['mac_bundle'].get('name')
+
+    if not name:
+        name = info.get("pkg_name", info['name'])
+
+    return name
+
+def copy_mac_bundle_files(info, prefix):
+    if 'mac_bundle' in info:
+        shutil.copyfile(info['mac_bundle'].get('info_plist'), join(prefix, 'Info_plist'))
+        shutil.copytree(info['mac_bundle'].get('resources'), join(prefix, 'Resources'), dirs_exist_ok=True)
+        os.makedirs(join(prefix, 'MacOS'))
+        os.symlink(f'../Contents/{info["mac_bundle"]["executable"]}', join(prefix, 'MacOS', info['mac_bundle']['name']))
+
+def package_prefix(info, root = ''):
+    base_prefix = join(root, package_name(info))
+    if 'mac_bundle' in info:
+        return join(base_prefix + '.app', 'Contents')
+    return base_prefix
+
 def create(info, verbose=False):
     # Do some configuration checks
     if info.get("check_path_spaces", True) is True:
@@ -419,7 +448,6 @@ def create(info, verbose=False):
     PACKAGES_DIR = join(CACHE_DIR, "built_pkgs")
 
     fresh_dir(PACKAGES_DIR)
-    prefix = join(PACKAGE_ROOT, info.get("pkg_name", info['name']).lower())
 
     # We need to split tasks in sub-PKGs so the GUI allows the user to enable/disable
     # the ones marked as optional. Optionality is controlled in modify_xml() by
@@ -433,10 +461,16 @@ def create(info, verbose=False):
     # We first populate PACKAGE_ROOT with everything needed, and then run pkg build on that dir
     fresh_dir(PACKAGE_ROOT)
     fresh_dir(SCRIPTS_DIR)
+    prefix = package_prefix(info, PACKAGE_ROOT)
+    logger.info(f'PACKAGE_ROOT: {PACKAGE_ROOT}')
+    logger.info(f'SCRIPTS_DIR: {SCRIPTS_DIR}')
+    logger.info(f'prefix: {prefix}')
     pkgs_dir = join(prefix, 'pkgs')
     os.makedirs(pkgs_dir)
     preconda.write_files(info, pkgs_dir)
     preconda.copy_extra_files(info.get("extra_files", []), prefix)
+
+
     # These are the user-provided scripts, maybe patched to have a shebang
     # They will be called by a wrapping script added later, if present
     if info.get('pre_install'):
@@ -461,7 +495,9 @@ def create(info, verbose=False):
     for dist in all_dists:
         os.link(join(CACHE_DIR, dist), join(pkgs_dir, dist))
 
-    shutil.copyfile(info['_conda_exe'], join(prefix, "conda.exe"))
+    shutil.copyfile(info['_conda_exe'], join(prefix, "conda.exe"))    
+
+    copy_mac_bundle_files(info, prefix)
 
     # Sign conda-standalone so it can pass notarization
     notarization_identity_name = info.get('notarization_identity_name')
@@ -498,6 +534,7 @@ def create(info, verbose=False):
     pkgbuild_prepare_installation(info)
     names = ['prepare_installation']
 
+    logger.info(f'prep instal moved to {OSX_DIR}')
     # 2. (Optional) Run user-provided pre-install script
     # The preinstall script is run _after_ the tarballs have been extracted!
     if info.get('pre_install'):
@@ -511,6 +548,7 @@ def create(info, verbose=False):
     pkgbuild_script('run_installation', info, 'run_installation.sh')
     names.append('run_installation')
 
+    logger.info(f'run_inst done')
     # 4. The user-supplied post-install script
     if info.get('post_install'):
         pkgbuild_script(
@@ -527,6 +565,8 @@ def create(info, verbose=False):
     if not info.get('keep_pkgs'):
         pkgbuild_script('cacheclean', info, 'clean_cache.sh')
         names.append('cacheclean')
+
+    logger.info('Cacheclean done')
 
     # The default distribution file needs to be modified, so we create
     # it to a temporary location, edit it, and supply it to the final call.

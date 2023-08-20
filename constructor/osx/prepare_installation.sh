@@ -18,7 +18,7 @@ logger -p "install.info" "$1" || echo "$1"
 
 unset DYLD_LIBRARY_PATH
 
-PREFIX="$2/__NAME_LOWER__"
+PREFIX="$2/__PKG_PREFIX__"
 PREFIX=$(cd "$PREFIX"; pwd)
 export PREFIX
 echo "PREFIX=$PREFIX"
@@ -26,6 +26,8 @@ CONDA_EXEC="$PREFIX/conda.exe"
 # /COMMON UTILS
 
 chmod +x "$CONDA_EXEC"
+mv $PREFIX/Info_plist $PREFIX/Info.plist
+ln -s ../bin/qgis $PREFIX/MacOS/QGIS
 
 # Create a blank history file so conda thinks this is an existing env
 mkdir -p "$PREFIX/conda-meta"

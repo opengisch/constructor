@@ -9,6 +9,7 @@ import platform
 import shutil
 import sys
 import time
+import logging
 from os.path import isdir, join
 from os.path import split as path_split
 from pathlib import Path
@@ -34,6 +35,8 @@ except ImportError:
     import ruamel_json as json
 
 files = '.constructor-build.info', 'urls', 'urls.txt', 'env.txt'
+
+logger = logging.getLogger(__name__)
 
 
 def write_index_cache(info, dst_dir, used_packages):
@@ -121,6 +124,8 @@ def system_info():
 
 
 def write_files(info, dst_dir):
+    logger.info(f'write files {dst_dir}')
+
     with open(join(dst_dir, '.constructor-build.info'), 'w') as fo:
         json.dump(system_info(), fo)
 

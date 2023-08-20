@@ -6,6 +6,6 @@
 # change.
 set -eux
 
-PREFIX="$2/__NAME_LOWER__"
+PREFIX="$2/__PKG_PREFIX__"
 PREFIX=$(cd "$PREFIX"; pwd)
 "$PREFIX/bin/python" -m conda init --all

@@ -9,7 +9,7 @@
 # so the only way to prevent an action is to abort and start again from the beginning.
 set -euo pipefail
 
-PREFIX="$2/__NAME_LOWER__"
+PREFIX="$2/__PKG_PREFIX__"
 echo "PREFIX=$PREFIX"
 
 if [[ -e "$PREFIX" ]]; then

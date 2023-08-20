@@ -20,7 +20,7 @@ logger -p "install.info" "$1" || echo "$1"
 
 unset DYLD_LIBRARY_PATH
 
-PREFIX="$2/__NAME_LOWER__"
+PREFIX="$2/__PKG_PREFIX__"
 PREFIX=$(cd "$PREFIX"; pwd)
 export PREFIX
 echo "PREFIX=$PREFIX"

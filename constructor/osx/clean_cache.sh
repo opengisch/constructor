@@ -6,6 +6,6 @@
 # but which the user can change.
 set -eux
 
-PREFIX="$2/__NAME_LOWER__"
+PREFIX="$2/__PKG_PREFIX__"
 PREFIX=$(cd "$PREFIX"; pwd)
 rm -rf "$PREFIX/pkgs"

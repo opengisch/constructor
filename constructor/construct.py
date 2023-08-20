@@ -586,6 +586,9 @@ Allowed keys are:
       license text. Only relevant if include_text is True. Any str accepted by open()'s 'errors'
       argument is valid. See https://docs.python.org/3/library/functions.html#open.
 '''),
+('mac_bundle', False, dict, '''
+Blablabla about mac bundles
+'''),
 ]
 
 
