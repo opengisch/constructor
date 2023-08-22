@@ -124,8 +124,6 @@ def system_info():
 
 
 def write_files(info, dst_dir):
-    logger.info(f'write files {dst_dir}')
-
     with open(join(dst_dir, '.constructor-build.info'), 'w') as fo:
         json.dump(system_info(), fo)
 

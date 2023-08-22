@@ -586,8 +586,20 @@ Allowed keys are:
       license text. Only relevant if include_text is True. Any str accepted by open()'s 'errors'
       argument is valid. See https://docs.python.org/3/library/functions.html#open.
 '''),
-('mac_bundle', False, dict, '''
-Blablabla about mac bundles
+
+    ('mac_bundle', False, dict, '''
+If specified, creates a mac bundle. (see https://en.wikipedia.org/wiki/Bundle_(macOS))
+It expects a dictionary containing the following keys:
+- `name` (optional): Will determine the name of the application and as such be part of
+  the installation path `<default_location_pkg>/<mac_bundle.name>.app` and will be shown
+  in finder as application name. If omitted, `pkg_name` will be used instead, which will
+  always be forced to lower case.
+- `info_plist` (mandatory): Path to the `Info.plist` file for the application,
+  see https://developer.apple.com/documentation/bundleresources/information_property_list.
+- `executable` (mandatory): Path to the main executable, relative to the conda installation
+  root.
+- `resources` (optional): Path to a folder containing additional files to be copied
+  into `Contents/Resources`, such as application icons referenced from `Info.plist`.
 '''),
 ]
 

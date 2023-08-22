@@ -26,8 +26,18 @@ CONDA_EXEC="$PREFIX/conda.exe"
 # /COMMON UTILS
 
 chmod +x "$CONDA_EXEC"
-mv $PREFIX/Info_plist $PREFIX/Info.plist
-ln -s ../bin/qgis $PREFIX/MacOS/QGIS
+
+# We cannot package a Info.plist file, so we package the file as Info_plist
+# and rename it here
+if [ -f $PREFIX/Info_plist ];
+then
+    mv $PREFIX/Info_plist $PREFIX/Info.plist
+fi
+
+if [ -n "__MAIN_EXE__" ];
+then
+    ln -s ../__MAIN_EXE__ $PREFIX/MacOS/__MAIN_EXE__
+fi
 
 # Create a blank history file so conda thinks this is an existing env
 mkdir -p "$PREFIX/conda-meta"
