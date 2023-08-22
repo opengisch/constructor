@@ -316,7 +316,6 @@ def move_script(src, dst, info, ensure_shebang=False, user_script_type=None):
         'CONSTRUCTOR_VERSION': info['CONSTRUCTOR_VERSION'],
         'REGISTER_ENVS': str(info.get("register_envs", True)).lower(),
     }
-
     data = preprocess(data, ppd)
     custom_variables = info.get('script_env_variables', {})
     data = fill_template(data, replace)
