@@ -424,8 +424,6 @@ def copy_mac_bundle_files(info, prefix):
         # so we add it ad Info_plist and rename the file in prepare_installation.sh
         shutil.copyfile(info['mac_bundle'].get('info_plist'), join(prefix, 'Info_plist'))
         shutil.copytree(info['mac_bundle'].get('resources'), join(prefix, 'Resources'), dirs_exist_ok=True)
-        os.makedirs(join(prefix, 'MacOS'))
-        os.symlink(f'../Contents/{info["mac_bundle"]["executable"]}', join(prefix, 'MacOS', info['mac_bundle']['name']))
 
 def package_prefix(info, root = ''):
     base_prefix = join(root, package_name(info))
