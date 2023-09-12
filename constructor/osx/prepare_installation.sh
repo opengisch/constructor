@@ -34,11 +34,6 @@ then
     mv $PREFIX/Info_plist $PREFIX/Info.plist
 fi
 
-if [ -n "__MAIN_EXE__" ];
-then
-    ln -s ../__MAIN_EXE__ $PREFIX/MacOS/__MAIN_EXE__
-fi
-
 # Create a blank history file so conda thinks this is an existing env
 mkdir -p "$PREFIX/conda-meta"
 touch "$PREFIX/conda-meta/history"
@@ -49,6 +44,14 @@ notify "Preparing packages..."
 if ! "$CONDA_EXEC" constructor --prefix "$PREFIX" --extract-conda-pkgs; then
     echo "ERROR: could not extract the conda packages"
     exit 1
+fi
+
+if [ -n "__MAIN_EXE__" ];
+then
+    echo "#!/bin/sh
+SCRIPT_DIR=$( cd -- \"\$( dirname -- \"\${BASH_SOURCE[0]}\" )\" &> /dev/null && pwd )
+exec \"\$SCRIPT_DIR/../__MAIN_EXE__\"" > $PREFIX/MacOS/__MAIN_EXE__
+    chmod +x $PREFIX/MacOS/__MAIN_EXE__
 fi
 
 exit 0
