@@ -50,8 +50,8 @@ if [ -n "__MAIN_EXE__" ];
 then
     echo "#!/bin/sh
 SCRIPT_DIR=\$( cd -- \"\$( dirname -- \"\${BASH_SOURCE[0]}\" )\" &> /dev/null && pwd )
-exec \"\$SCRIPT_DIR/../__MAIN_EXE__\"" > $PREFIX/MacOS/__MAIN_EXE__
-    chmod +x $PREFIX/MacOS/__MAIN_EXE__
+exec \"\$SCRIPT_DIR/../__MAIN_EXE__\"" > $PREFIX/MacOS/$(basename __MAIN_EXE__ )
+    chmod +x $PREFIX/MacOS/$( basename __MAIN_EXE__ )
 fi
 
 exit 0
