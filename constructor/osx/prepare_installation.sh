@@ -48,9 +48,9 @@ fi
 
 if [ -n "__MAIN_EXE__" ];
 then
+    mkdir -p $PREFIX/MacOS
     echo "#!/bin/sh
 SCRIPT_DIR=\$( cd -- \"\$( dirname -- \"\${BASH_SOURCE[0]}\" )\" &> /dev/null && pwd )
-mkdir -p $PREFIX/MacOS
 exec \"\$SCRIPT_DIR/../__MAIN_EXE__\"" > $PREFIX/MacOS/$(basename __MAIN_EXE__ )
     chmod +x $PREFIX/MacOS/$( basename __MAIN_EXE__ )
 fi
