@@ -703,8 +703,7 @@ def yamlize(data, directory, content_filter):
     data = content_filter(data)
     try:
         doc = yaml.YAML(typ='safe')
-        doc.load(data)
-        return doc
+        return doc.load(data)
     except yaml.error.YAMLError as e:
         if ('{{' not in data) and ('{%' not in data):
             raise UnableToParse(original=e)
