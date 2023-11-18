@@ -27,14 +27,6 @@ CACHE_DIR = PACKAGE_ROOT = PACKAGES_DIR = SCRIPTS_DIR = None
 
 logger = logging.getLogger(__name__)
 
-_check_call = check_call
-
-def check_call(args):
-    """
-    Debugs calls to external processes
-    """
-    logger.debug(f"Executing: {' '.join(args)}")
-    return _check_call(args)
 
 def calculate_install_dir(yaml_file, subdir=None):
     contents = parse(yaml_file, subdir or conda_context.subdir)
@@ -418,18 +410,22 @@ def package_name(info):
 
     return name
 
+
 def copy_mac_bundle_files(info, prefix):
     if 'mac_bundle' in info:
         # Somehow the pkgbuild does not like if Info.plist is present
         # so we add it ad Info_plist and rename the file in prepare_installation.sh
         shutil.copyfile(info['mac_bundle'].get('info_plist'), join(prefix, 'Info_plist'))
-        shutil.copytree(info['mac_bundle'].get('resources'), join(prefix, 'Resources'), dirs_exist_ok=True)
+        shutil.copytree(info['mac_bundle'].get('resources'), join(prefix, 'Resources'),
+                        dirs_exist_ok=True)
 
-def package_prefix(info, root = ''):
+
+def package_prefix(info, root=''):
     base_prefix = join(root, package_name(info))
     if 'mac_bundle' in info:
         return join(base_prefix + '.app', 'Contents')
     return base_prefix
+
 
 def create(info, verbose=False):
     # Do some configuration checks
@@ -471,7 +467,6 @@ def create(info, verbose=False):
     os.makedirs(pkgs_dir)
     preconda.write_files(info, pkgs_dir)
     preconda.copy_extra_files(info.get("extra_files", []), prefix)
-
 
     # These are the user-provided scripts, maybe patched to have a shebang
     # They will be called by a wrapping script added later, if present
